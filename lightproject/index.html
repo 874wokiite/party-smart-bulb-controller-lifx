@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="h-screen w-screen bg-gray-900">
+
+    <div id="app" class="flex justify-center">
+        <section class="w-48 flex flex-col justify-center items-center m-10">
+            <div class="flex flex-col justify-center items-center">
+                <div class="w-48 h-1 bg-white"></div>
+                <h1 class="font-bold ">BRIGHT MIXER</h1>
+                <img class="h-14" src="logo.png" alt="">
+                <p>IXD156-02 SP22 </p>
+                <div class="w-48 h-1 bg-white"></div>
+                <img class="h-48 m-10" src="bulb.png" alt="">
+            </div>
+  
+            <div class="switchArea">
+                <input type="checkbox"   v-model="power"
+                true-value="on"
+                false-value="off" id="switch1" @change="setLight()">
+                <label for="switch1"><span></span></label>
+                <div id="swImg"></div>
+            </div>
+
+        </section>
+
+        <section class="w-120">
+            <div class="m-10 border-8 border-white rounded">
+           
+                <div class="flex items-center justify-center">
+                    <div class="flex flex-col items-center">
+                        <p class="label">COLOR</p>
+                        <div class="m-4 colorcircle" :style="{backgroundColor:lightColor }" id="lightcolor"></div>   
+                    </div>
+                    <div class="flex flex-col items-center m-10">
+                        <label class="label" for="red">RED</label>
+                        <input class="redbar" type="range" orient="vertical" min="0" max="255" step="1" value="0"
+                            id="red" v-model="red" @change="setColor(red, green, blue)">
+                        <p id="redval">{{ this.red }}</p>
+                    </div>
+                    <div class="flex flex-col items-center m-10">
+                        <label class="label" for="green">GREEN</label>
+                        <input class="greenbar" type="range" orient="vertical" min="0" max="255" step="1" value="0"
+                            id="green" v-model="green" @change="setColor(red, green, blue)">
+                        <p id="greenval">{{ this.green }}</p>
+                    </div>
+                    <div class="flex flex-col items-center m-10">
+                        <label class="label" for="blue">BLUE</label>
+                        <input class="bluebar" type="range" orient="vertical" min="0" max="255" step="1" value="0"
+                            id="blue" v-model="blue" @change="setColor(red, green, blue)">
+                        <p id="blueval">{{ this.blue }}</p>
+                    </div>
+                    
+                    <div class="flex flex-col items-center m-10">
+                        <label class="label" for="blue">BRIGHTNESS</label>
+                        <input class="brightbar" type="range" orient="vertical" min="0.0" max="1.0" step="0.1" v-model.number="brightness" @change="setLight()">
+                        <p>{{this.brightness}}</p>
+                    </div>
+        
+
+                </div>
+
+
+              
+                <div class="p-8 bg-gray-200 h-10 w-10 mb-4" v-for="light in lights">
+                    {{ light }}
+                </div>
+                <button @click="setPink"></button>
+
+                <div class="m-3 grid grid-cols-4 gap-4 justify-items-center">
+                    <button @click="setPink()" class="pink boxsize bg-gray-200"></button>
+                    <button @click="setBlue()" class="blue boxsize bg-gray-200"></button>
+                    <button @click="setSky()" class="lightblue boxsize bg-gray-200"></button>
+                    <button @click="setGreen()" class="green boxsize bg-gray-200"></button>
+                    <button @click="setYellow()" class="yellow boxsize bg-gray-200"></button>
+                    <button @click="setOrange()" class="orange boxsize bg-gray-200"></button>
+                    <button @click="setRed()" class="red boxsize bg-gray-200"></button>
+                    <button @click="setReset()" class="gray boxsize bg-gray-200"></button>
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+
+
+    </div>
+
+
+    <script src=" https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js">
+    </script>
+    <!-- <script src="deSVG.js"></script> -->
+    <script>
+        // heads up, 120 requests for a 60 second window
+        // https://cloud.lifx.com/sign_in
+        // https://cloud.lifx.com/settings
+
+        const deviceID = "d073d5686b94"
+        const key = "cf80f9037519ee25f7321b7683a822e322cc61c33bdd4f2458c8b0834357a574"
+
+        var app = new Vue({
+            el: '#app',
+            data: {
+                lights: [],
+                lightColor: 'white',
+                brightness: .05,
+                red: 0,
+                green: 0,
+                blue: 0,
+                power: 'on'
+            },
+            methods: {
+                setLight() {
+
+                    let lightOptions = {
+                        "power": this.power,
+                        "color": this.lightColor,
+                        "brightness": this.brightness,
+                        "fast": false
+                    }
+
+                    let fetchData = {
+                        method: "PUT",
+                        body: JSON.stringify(lightOptions),
+                        headers: new Headers({
+                            "Authorization": "Bearer " + key,
+                            "content-type": "application/json",
+                        }),
+                    }
+
+                    fetch('https://api.lifx.com/v1/lights/' + deviceID + '/state', fetchData)
+                        .then(function (response) {
+                            return response
+                        })
+                        .then(function (data) {
+                            app.lights = data
+                        })
+                        .catch(function (error) {
+                            console.log(error)
+                        })
+
+                },
+                getLights() {
+                    let fetchData = {
+                        method: 'GET',
+                        headers: new Headers({
+                            'Authorization': 'Bearer ' + key,
+                        })
+                    }
+
+                    fetch('https://api.lifx.com/v1/lights/all', fetchData)
+                        .then(function (response) {
+                            return response.json()
+                        })
+                        .then(function (data) {
+                            app.lights = data
+                        })
+                        .catch(function (error) {
+                            console.log(error)
+                        });
+                },
+                setColor(red, green, blue) {
+                    let r = parseInt(red);
+                    let rh = (r < 16) ? "0" + r.toString(16) : r.toString(16);
+
+                    let g = parseInt(green);
+                    let gh = (g < 16) ? "0" + g.toString(16) : g.toString(16);
+
+                    let b = parseInt(blue);
+                    let bh = (b < 16) ? "0" + b.toString(16) : b.toString(16);
+
+                    this.lightColor = '#' + (rh + gh + bh).toUpperCase();
+                    this.setLight()
+                },
+                setPink(){
+                    this.lightColor = '#EC77FF';
+                    this.setLight()
+
+                },
+                setBlue(){
+                    this.lightColor = '#5849FF';
+                    this.setLight()
+                },
+                setSky(){
+                    this.lightColor = '#4CFAEF';
+                    this.setLight()
+                },
+                setGreen(){
+                    this.lightColor = '#5EFF5A';
+                    this.setLight()
+                },
+                setYellow(){
+                    this.lightColor = '#FAE741';
+                    this.setLight()
+
+                },
+                setOrange(){
+                    this.lightColor = '#E99219';
+                    this.setLight()
+
+                },
+                setRed(){
+                    this.lightColor = '#D1163B';
+                    this.setLight()
+                },
+                setReset(){
+                    this.lightColor = 'white';
+                    this.setLight()
+                },
+                powerOff(){
+                    this.power = 'off';
+                    this.setLight()
+                 
+                },
+                powerOn(){
+                    this.power = 'on';
+                    this.setLight()
+
+                }
+            },
+        })
+
+    </script>
+
+</body>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anek+Tamil:wght@300&family=Bebas+Neue&display=swap');
+h1{
+    font-family: 'Bebas Neue', cursive;
+    color: white;
+    font-size: 24px;
+}
+p{
+    font-family: 'Anek Tamil', sans-serif;
+    color: white;
+    font-size: 18px;
+}
+.label{
+    font-family: 'Bebas Neue', cursive;
+    color: white;
+    font-size: 18px;
+
+}
+
+
+
+.switchArea {
+  line-height    : 60px;              
+  letter-spacing : 0;              
+  text-align     : center;             
+  font-size      : 27px;               
+  font-family: 'Bebas Neue', cursivef;
+
+  position       : relative;           
+  margin         : auto;              
+  width          : 150px;             
+  background     : rgba(255, 255, 255, 0);              
+}
+
+
+.switchArea input[type="checkbox"] {
+  display        : none;        
+}
+
+.switchArea label {
+  display        : block;             
+  box-sizing     : border-box;        
+  height         : 60px;                
+  border         : 2px solid #a4a4a4;   
+  border-radius  : 30px;             
+}
+
+.switchArea input[type="checkbox"]:checked +label {
+  border-color   : #ffffff;            
+}
+
+.switchArea label span:after{
+  content        : "OFF";              
+  padding        : 0 0 0 36px;       
+  color          : #a4a4a4;      
+}
+
+
+.switchArea  input[type="checkbox"]:checked + label span:after{
+  content        : "ON";              
+  padding        : 0 36px 0 0;        
+  color          : #ffffff;        
+}
+
+
+.switchArea #swImg {
+  position       : absolute;           
+  width          : 52px;              
+  height         : 52px;             
+  background     : #a4a4a4;         
+  top            : 4px;           
+  left           : 4px;               
+  border-radius  : 26px;           
+  transition     : .2s;               
+}
+
+
+.switchArea input[type="checkbox"]:checked ~ #swImg {
+  transform      : translateX(90px);   
+  background     : #ffffff;            
+}
+
+.boxsize{
+    width: 140px;
+    height: 80px;
+    border-radius: 26px;
+    box-shadow: 2px 2px 4px rgb(0, 0, 0);
+    border-width: 4px;
+    border-color: white;
+}
+     
+.pink{
+    background: linear-gradient(180deg, #EC77FF, #83418D);
+}
+.pink:hover{
+    background:#83418D ;
+}
+.blue{
+    background: linear-gradient(180deg, #5849FF, #55508F);
+}
+.blue:hover {
+    background: #55508F;
+}
+.lightblue{
+    background: linear-gradient(180deg, #4CFAEF, #5B9995);
+}
+.lightblue:hover{
+    background:  #5B9995;
+}
+.green{
+    background: linear-gradient(180deg, #5EFF5A, #709D6F);
+}
+.green:hover{
+    background: #709D6F;
+}
+.yellow{
+    background: linear-gradient(180deg, #FAE741, #B9B063);
+}
+.yellow:hover{
+    background:#B9B063;
+}
+.orange{
+    background: linear-gradient(180deg, #e99219, #A35942);
+}
+.orange:hover{
+    background: #A35942;
+}
+.red{
+    background: linear-gradient(180deg, #d1163b, #702a38);
+}
+.red:hover{
+    background: #803838;
+}
+.gray{
+    background: linear-gradient(180deg, #D0D0D0, #929292);
+}
+.gray:hover{
+    background: #929292;
+}
+
+.svg_img path{
+    color: rgb(32, 214, 101);
+    fill: currentColor;
+  }
+
+
+input[type="range"] {
+    -webkit-appearance: none; 
+    appearance: none;
+    cursor: pointer; 
+
+    border-radius: 10px; 
+    border: solid 3px #dff1ff; 
+    outline: 0; 
+    height: 200px;
+    width: 30px;
+}
+
+.redbar{
+    background: linear-gradient(180deg, #ac0e28, #111827);
+
+}
+
+.greenbar{
+    background: linear-gradient(180deg, #0eb84f, #111827);
+
+}
+.bluebar{
+    background: linear-gradient(180deg, #1a0dc7, #111827);
+}
+.brightbar{
+    background: linear-gradient(180deg, #111827, #a4a4a4);
+
+}
+
+
+      
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    background: #5849FF;
+}
+
+#color{
+    display: block;
+    clear: both;
+    float: none;
+  
+  }
+.colorcircle{
+    width: 100px;
+    height:100px;
+    border-radius: 100px;
+    border-width: 4px;
+    border-color: white;
+}
+
+
+</style>
+
+</html>
