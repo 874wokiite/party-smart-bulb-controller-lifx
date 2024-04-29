@@ -3,4 +3,4 @@
 - firebase
 
 実物のリンク
-https://urgallery-project.netlify.app/
+https://lightproject-lifx.netlify.app
